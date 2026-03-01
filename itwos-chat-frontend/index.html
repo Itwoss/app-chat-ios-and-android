@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <!-- Google Font: Raleway Light 300 Italic for post titles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@1,300&display=swap" rel="stylesheet">
+    <!-- REMOVED: Permissions-Policy breaks iOS Safari JavaScript execution -->
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Theme Color: transparent so status bar has no visible strip; content draws behind it -->
+    <meta name="theme-color" content="transparent">
+    
+    <!-- iOS PWA Meta Tags: black-translucent = content behind status bar, translucent bar -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Chat App" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <!-- Reduce stale cache on iOS so users get latest app -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Chat App</title>
+    <style>
+      /* Optimized loading screen for iOS - shows while React loads */
+      #root:empty::before {
+        content: "Loading...";
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        height: 100dvh;
+        padding-top: env(safe-area-inset-top);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 18px;
+        color: #666;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #fff;
+        z-index: 9999;
+        box-sizing: border-box;
+      }
+      /* Hide loading when React mounts */
+      #root:not(:empty)::before {
+        display: none;
+      }
+      /* Error fallback - must sit above loading overlay on iOS */
+      .error-fallback {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        height: 100vh;
+        height: 100dvh;
+        padding: 20px;
+        padding-top: max(env(safe-area-inset-top), 20px);
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #fff;
+        z-index: 10000;
+        box-sizing: border-box;
+      }
+      /* When showing error, hide loading overlay so user sees the message */
+      body.ios-load-timeout #root:empty::before,
+      body.ios-error #root:empty::before {
+        display: none !important;
+      }
+      /* Prevent flash of unstyled content; safe area applied in index.css for standalone */
+      html, body {
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
+      }
+      html {
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+      /* Force document scroll on mobile/tablet viewport so trackpad + touch work (e.g. DevTools device mode) */
+      @media (max-width: 1024px) {
+        html, body {
+          height: auto !important;
+          min-height: 100% !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          -webkit-overflow-scrolling: touch;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- iOS: Register fallback FIRST so it always runs even if the app script fails -->
+    <script>
+      (function() {
+        window._reactMounted = false;
+        var timeoutId = null;
+        var mountChecker = null;
+        var LOAD_TIMEOUT_MS = 6000;
+
+        window._hideLoadingScreen = function() {
+          var el = document.getElementById('loading-screen');
+          if (el) el.style.display = 'none';
+        };
+
+        window._checkReactMount = function() {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            window._reactMounted = true;
+            window._hideLoadingScreen();
+            if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+            if (mountChecker) { clearInterval(mountChecker); mountChecker = null; }
+            return true;
+          }
+          return false;
+        };
+
+        timeoutId = setTimeout(function() {
+          if (window._reactMounted) return;
+          if (window._checkReactMount && window._checkReactMount()) return;
+          window._hideLoadingScreen && window._hideLoadingScreen();
+          document.body.classList.add('ios-load-timeout');
+          var errorDiv = document.getElementById('js-error');
+          if (errorDiv) {
+            errorDiv.innerHTML = '<h2>App didn\'t load</h2><p>Tap Reload. On iPhone: open in <strong>Safari</strong> (not Messages/Mail), then Settings &rarr; Safari &rarr; Clear History and Website Data, then try again.</p><button onclick="location.reload()" style="margin-top:20px;padding:14px 28px;background:#007AFF;color:white;border:none;border-radius:8px;cursor:pointer;font-size:17px;">Reload</button>';
+            errorDiv.style.display = 'flex';
+          }
+        }, LOAD_TIMEOUT_MS);
+
+        window.addEventListener('react-mounted', function() {
+          window._reactMounted = true;
+          window._hideLoadingScreen && window._hideLoadingScreen();
+          if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+          if (mountChecker) { clearInterval(mountChecker); mountChecker = null; }
+        });
+
+        mountChecker = setInterval(function() {
+          if (window._checkReactMount && window._checkReactMount()) clearInterval(mountChecker);
+        }, 400);
+      })();
+    </script>
+
+    <!-- Real loading div - hidden when React mounts or when timeout/error shows -->
+    <div id="loading-screen" style="position:fixed;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:#fff;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:18px;color:#666;padding-top:env(safe-area-inset-top);box-sizing:border-box;">Loading...</div>
+    <div id="root"></div>
+
+    <div class="error-fallback" id="js-error">
+      <h2>JavaScript Error Detected</h2>
+      <p>Please refresh the page or clear your browser cache.</p>
+      <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #007AFF; color: white; border: none; border-radius: 8px; cursor: pointer;">
+        Reload Page
+      </button>
+    </div>
+
+    <!-- Load main script after fallback is registered -->
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <script>
+      /* Re-attach mount checker after root exists (for iOS) */
+      (function() {
+        var mountChecker = setInterval(function() {
+          if (window._checkReactMount && window._checkReactMount()) clearInterval(mountChecker);
+        }, 400);
+        setTimeout(function() { clearInterval(mountChecker); }, 10000);
+      })();
+      
+      // iOS Safari error detection - DO NOT clear root, just show error message
+      // Use DOMContentLoaded for faster initialization
+      document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('error', function (e) {
+          if (!e.error) return;
+
+          const msg = e.error.message || "";
+          const filename = e.filename || "";
+          const lineno = e.lineno || "";
+
+          // Ignore React hydration errors and YouTube API errors on iOS
+          if (msg.includes("isExternalMethodAvailable") || 
+              msg.includes("www-embed-player") ||
+              msg.includes("embed-player-pc-es6")) {
+            return;
+          }
+
+          // Log all errors for debugging
+          console.error('[iOS Error]', {
+            message: msg,
+            filename: filename,
+            line: lineno,
+            error: e.error
+          });
+
+          document.body.classList.add('ios-error');
+          if (window._hideLoadingScreen) window._hideLoadingScreen();
+          var errorDiv = document.getElementById('js-error');
+          if (errorDiv) {
+            var safeMsg = (msg || '').substring(0, 200);
+            var safeFile = (filename || '').substring(0, 100);
+            errorDiv.innerHTML = '<h2>JavaScript Error</h2><p style="font-size:14px;color:#666;">' + safeMsg + '</p><p style="font-size:12px;color:#999;">' + safeFile + ':' + lineno + '</p><button onclick="window.location.reload()" style="margin-top:20px;padding:12px 24px;background:#007AFF;color:white;border:none;border-radius:8px;cursor:pointer;">Reload Page</button>';
+            errorDiv.style.display = 'flex';
+          }
+        });
+        
+        // Also catch unhandled promise rejections (common on iOS when scripts fail)
+        window.addEventListener('unhandledrejection', function(e) {
+          console.error('[iOS Unhandled Rejection]', e.reason);
+          if (!window._reactMounted) {
+            document.body.classList.add('ios-error');
+            if (window._hideLoadingScreen) window._hideLoadingScreen();
+            var errorDiv = document.getElementById('js-error');
+            if (errorDiv) {
+              var reason = String((e.reason && e.reason.message) || e.reason || 'Unknown').substring(0, 150);
+              errorDiv.innerHTML = '<h2>Loading Error</h2><p>An error occurred while loading the app.</p><p style="font-size:12px;color:#999;">' + reason + '</p><button onclick="window.location.reload()" style="margin-top:20px;padding:12px 24px;background:#007AFF;color:white;border:none;border-radius:8px;cursor:pointer;">Reload Page</button>';
+              errorDiv.style.display = 'flex';
+            }
+          }
+        });
+      });
+
+      // NOTE: We no longer unregister service workers here so that push notifications
+      // (e.g. when someone messages the user) work in browser and when added to home screen.
+      // main.jsx registers /sw.js which handles push events.
+    </script>
+    <!-- Razorpay Checkout SDK - Load lazily after page load to not block initial render -->
+    <script>
+      // Load Razorpay script lazily after page is interactive
+      // This prevents blocking the initial page load on iOS Safari
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadRazorpay);
+      } else {
+        // DOM already loaded, use requestIdleCallback or setTimeout
+        if (window.requestIdleCallback) {
+          requestIdleCallback(loadRazorpay, { timeout: 3000 });
+        } else {
+          setTimeout(loadRazorpay, 1000);
+        }
+      }
+
+      function loadRazorpay() {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.defer = true;
+        script.onerror = function() {
+          // Silently fail - payment features will work when needed
+        };
+        document.body.appendChild(script);
+      }
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,37 @@
+name: itwos-chat-frontend
+static_sites:
+  - name: frontend
+    github:
+      repo: Itwoss/itwos-chat-frontend
+      branch: main
+      deploy_on_push: true
+    build_command: npm install && npm run build
+    output_dir: dist
+    routes:
+      - path: /
+    # SPA: serve index.html for ALL paths so refresh on /user/home, /login, etc. does not 404
+    index_document: index.html
+    catchall_document: index.html
+    # CRITICAL: Vite needs VITE_* variables at BUILD_TIME, not RUN_TIME
+    # iOS blocks HTTP, so we MUST have HTTPS URLs available during build
+    envs:
+      - key: VITE_API_URL
+        value: https://api.itwos.store
+        scope: BUILD_TIME  # Available during npm run build
+      - key: VITE_FRONTEND_URL
+        value: https://app.itwos.store
+        scope: BUILD_TIME  # Available during npm run build
+      - key: VITE_RAZORPAY_KEY_ID
+        value: rzp_live_RUuZIGTpYBor0z
+        scope: BUILD_TIME  # Available during npm run build
+    # Force HTTPS for iOS compatibility
+    http_port: 80
+    https_port: 443
+    # Health check
+    health_check:
+      http_path: /
+      initial_delay_seconds: 10
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3

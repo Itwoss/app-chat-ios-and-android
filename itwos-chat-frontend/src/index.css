@@ -1,0 +1,280 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ---------------------------------------------------------------------------
+   View Transitions API — theme toggle circular reveal
+   --------------------------------------------------------------------------- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* ---------------------------------------------------------------------------
+   Ripple button effect
+   --------------------------------------------------------------------------- */
+@keyframes rippling {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.ripple-effect {
+  transform: scale(0);
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Save/unsave toast (lightweight, no framer-motion) */
+@keyframes saveToastIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Modal content entrance when motionPreset="none" (avoids framer-motion at runtime) */
+@keyframes modalContentIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Drawer content entrance when motionPreset="none" */
+@keyframes drawerContentIn {
+  from {
+    opacity: 0;
+    transform: translate3d(-16px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Safe Area Testing & Debugging
+   --------------------------------------------------------------------------- */
+/* CSS variables for console testing:
+   Run in console: getComputedStyle(document.documentElement).getPropertyValue('--safe-area-test')
+   Should return something like "34px" on iPhone, "0px" on desktop */
+:root {
+  --safe-area-test-top: env(safe-area-inset-top);
+  --safe-area-test-left: env(safe-area-inset-left);
+  --safe-area-test-right: env(safe-area-inset-right);
+}
+
+/* Visual debug class - temporarily add <div class="safe-test"></div> to test
+   If safe area works: You'll see a red strip at bottom on iPhone (height = safe area inset)
+   If not: No red strip appears (inset value is 0) */
+
+/* iOS PWA: reduce system long-press menu and text selection (Instagram-style) */
+/* Offscreen sections: browser can skip layout/paint when not visible (low-end perf) */
+.perf-content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
+html,
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Inputs and textareas must stay selectable for typing/editing */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Reduce callout on links (URL path preview may still appear on iOS) */
+a {
+  -webkit-touch-callout: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  /* Ensure touch/trackpad vertical scroll works in mobile view */
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
+  position: relative;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  #root {
+    min-height: 100dvh;
+  }
+}
+
+/* Mobile viewport (real device + DevTools): document scroll only → trackpad + touch work.
+   Do NOT add overscroll-behavior on html/body here — it can prevent scrolling on some devices. */
+@media (max-width: 1024px) {
+  html,
+  body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  #root {
+    min-height: 100%;
+    height: auto !important;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Safe area utility classes (PWA / standalone full-screen)
+   Use on fixed navbars or containers that need to avoid notch/status bar.
+   --------------------------------------------------------------------------- */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-top-min {
+  /* Guaranteed top space when env() returns 0 (e.g. some Android) */
+  padding-top: max(env(safe-area-inset-top), 20px);
+}
+
+.safe-bottom-min {
+  padding-bottom: 0;
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Fixed navbar: include safe area in height so content doesn't sit under status bar */
+.navbar-safe {
+  padding-top: env(safe-area-inset-top);
+  min-height: calc(60px + env(safe-area-inset-top));
+}
+
+/* PWA Fullscreen Support - Edge-to-edge, no visible status bar or bottom bar strip */
+@media (display-mode: standalone) {
+  html, body {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  /* No body padding: content draws behind status bar and home indicator; safe area applied manually in layout */
+  body {
+    padding: 0;
+    background: #000000; /* Match app so area behind status bar and nav bar is seamless (dark) */
+  }
+
+  /* Never show bottom safe area / button strip on any page (home, feed, or after closing sheets) */
+  html, body, #root {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
+}
+
+/* Bottom safe area: no extra padding; fill the system bottom inset with page background so no strip shows */
+html, body, #root {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Fill the bottom safe area (home indicator zone) with body background so it never shows as a separate strip */
+body::after {
+  content: '';
+  display: block;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background: #f2f2f7;
+  pointer-events: none;
+  z-index: -1;
+}
+@media (prefers-color-scheme: dark) {
+  body::after {
+    background: #000;
+  }
+}
+/* Standalone PWA: ensure filler matches app */
+@media (display-mode: standalone) {
+  body::after {
+    background: #000;
+  }
+}
+
+/* Prevent any body-level wrapper (e.g. Chakra portal) from showing a bottom strip after drawer close */
+body > div {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Profile page: no back row on profile, top aligned under notch (safe area only)
+   --------------------------------------------------------------------------- */
+body.profile-page .back-row {
+  display: none !important;
+}
+
+.profile-header,
+.page-container {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.profile-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Profile page: top safe area so content clears notch/status bar */
+.profile-top-section {
+  margin-top: 0 !important;
+  padding-top: max(12px, env(safe-area-inset-top, 0px)) !important;
+}
